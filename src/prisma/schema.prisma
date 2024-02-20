@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model school {
+  id        String   @id @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String
+  description String?
+  departments dept[]
+}
+
+model dept {
+  id        String   @id @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String  @unique
+  description String?
+
+  schoolId String
+  school   school @relation(fields: [schoolId], references: [id])
+
+  courses   course[] // One-to-many relationship with course
+  students  student[] // One-to-many relationship with student
+  lecturers lecturer[]
+}
+
+model session {
+  id        String   @id @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name      String     @unique
+  semesters semester[] // Many-to-many relationship with semester
+  scores    score[]
+  GPA       GPA[]
+}
+
+model semester {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name     String    @unique
+  sessions session[] // Many-to-many relationshipt with session
+  courses  course[] // One-to-many relationship with course
+  scores   score[] // One-to-many relationship with score
+  GPA      GPA[] // One-to-many relationship with GPA
+}
+
+model course {
+  id        String   @id @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String
+  description String?
+  unit        Int
+  level       Int
+
+  deptId String
+  dept   dept   @relation(fields: [deptId], references: [id])
+
+  lecturers lecturer[]
+
+  semesterId Int
+  semester   semester @relation(fields: [semesterId], references: [id])
+
+  students student[] // Many-to-many relationship with student
+  scores   score[]
+}
+
+model grade {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name       String @unique
+  lowerLimit Int    @unique
+  upperLimit Int    @unique
+  gradePoint Int    @unique
+
+  scores score[]
+}
+
+model score {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  score Int
+
+  studentId String
+  student   student @relation(fields: [studentId], references: [id])
+
+  courseId String
+  course   course @relation(fields: [courseId], references: [id])
+
+  sessionId String
+  session   session @relation(fields: [sessionId], references: [id])
+
+  semesterId Int
+  semester   semester @relation(fields: [semesterId], references: [id])
+
+  lecturerId Int
+  lecturer   lecturer @relation(fields: [lecturerId], references: [id])
+
+  gradeId Int
+  grade   grade @relation(fields: [gradeId], references: [id])
+}
+
+model GPA {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  value Float
+
+  studentId String
+  student   student @relation(fields: [studentId], references: [id])
+
+  sessionId String
+  session   session @relation(fields: [sessionId], references: [id])
+
+  semesterId Int
+  semester   semester @relation(fields: [semesterId], references: [id])
+}
+
+model lecturer {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  firstName  String
+  lastName   String
+  email      String   @unique
+  password   String
+  role       String   @default("lect")
+  resetToken String?  @unique
+  courses    course[] // Many-to-many relationship with course
+  scores     score[] // One-to-many relationship with score
+  depts      dept[] // Many-to-many relationship with department
+}
+
+model student {
+  id        String   @id @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  firstName  String
+  lastName   String
+  level      Int     @default(100)
+  email      String  @unique
+  password   String
+  role       String  @default("stud")
+  resetToken String? @unique
+
+  deptId String
+  dept   dept   @relation(fields: [deptId], references: [id])
+
+  courses course[] // Many-to-many relationship with course
+  scores  score[] // One-to-many relationship with score
+  gpas    GPA[]
+}
+
+model admin {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  firstName  String
+  lastName   String
+  email      String  @unique
+  password   String
+  role       String  @default("admin")
+  resetToken String? @unique
+}
