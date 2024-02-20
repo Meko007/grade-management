@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import apiRouter from './handlers/route.handler'
 import 'dotenv/config';
 
 const app = express();
@@ -13,6 +14,7 @@ app.use(helmet());
 app.use(cors({
     credentials: true,
 }));
+app.use(apiRouter);
 
 const port = process.env.PORT ?? 3000;
 
