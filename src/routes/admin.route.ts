@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import {
-    register,
-    login,
-    logout,
-    forgotPassword,
-    resetPassword
+	register,
+	login,
+	logout,
+	forgotPassword,
+	resetPassword
 } from '../controllers/admin.controller';
 
 const router = Router();
@@ -17,6 +17,6 @@ router.post('/admin/logout', logout);
 
 router.post('/admin/forgot-password', forgotPassword);
 
-router.post('/admin/reset-password/:resetToken', resetPassword)
+router.post('/admin/reset-password/:resetToken', resetPassword);
 
 export default router;
