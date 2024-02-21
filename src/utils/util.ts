@@ -14,7 +14,7 @@ export const isEmail = (email: string): boolean =>
 	(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/).test(email);
 
 export const checkName = (name: string): boolean => 
-    (/[\d!@#$%^&*()_+={}[\]:;<>,.?~\\\/]+/).test(name); // Checking if a name contains stuff besides letters
+	(/[\d!@#$%^&*()_+={}[\]:;<>,.?~\\\/]+/).test(name); // Checking if a name contains stuff besides letters
 
 export const capitalizeName = (name: string): string => {
 	return name
