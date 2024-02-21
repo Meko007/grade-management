@@ -9,29 +9,29 @@ export interface customReq extends Request {
 }
 
 export const createToken = (id: string | number, email: string, role: string) => {
-    const token = jwt.sign({
-        id,
-        email,
-        role,
-    }, secret, { expiresIn: '1h' });
-    return token;
+	const token = jwt.sign({
+		id,
+		email,
+		role,
+	}, secret, { expiresIn: '1h' });
+	return token;
 };
 
 export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const token = req.cookies.jwtToken;
+	try {
+		const token = req.cookies.jwtToken;
     
-        if (!token) {
-            return res.status(401).json({ message: 'Auth token missing' });
-        }
+		if (!token) {
+			return res.status(401).json({ message: 'Auth token missing' });
+		}
     
-        const decodedToken = jwt.verify(token, secret);
-        (req as customReq).token = decodedToken;
-        next();     
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
+		const decodedToken = jwt.verify(token, secret);
+		(req as customReq).token = decodedToken;
+		next();     
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: 'Internal Server Error' });
+	}
 };
 
 export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
