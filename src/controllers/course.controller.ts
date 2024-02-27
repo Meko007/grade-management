@@ -17,6 +17,10 @@ export const createCourse = async (req: Request, res: Response) => {
 		if (!isValidCourseCode(id)) {
 			return res.status(422).json({ message:  'invalid course code' });
 		}
+
+		if (!([1, 2, 3, 4, 5, 6].includes(Number(unit)))) {
+			return res.status(422).json({ message: 'invalid unit input' });
+		}
         
 		const level = Number(id[4]) * 100;
 
@@ -56,33 +60,26 @@ export const createCourse = async (req: Request, res: Response) => {
 
 export const getCourses = async (req: Request, res: Response) => {
 	try {
-		const { level, deptId, unit, semesterId } = req.query;
-		const whereCondition: {
-            level?: number,
-            deptId?: string,
-            unit?: number,
-            semesterId?: number,
-        } = {};
-
-		if (level) {
-			whereCondition.level = Number(level);
-		}
-
-		if (deptId) {
-			whereCondition.deptId = deptId as string;
-		}
-
-		if (unit) {
-			whereCondition.unit = Number(unit);
-		}
-
-		if (semesterId) {
-			whereCondition.semesterId = Number(semesterId);
-		}
+		const { level, deptId, unit, semesterId, search, page = 1 } = req.query;
+		const skip = (Number(page) - 1) * 10;
 
 		const courses = await prisma.course.findMany({
-			where: whereCondition,
+			where: {
+				level: level ? Number(level) : undefined,
+				deptId: deptId ? deptId as string : undefined,
+				unit: unit ? Number(unit) : undefined,
+				semesterId: semesterId ? Number(semesterId) : undefined,
+				OR: search ? [
+					{ name: { contains: (search as string), mode: 'insensitive' } },
+				] : undefined,
+			},
+			skip: skip,
+			take: 10,
+			orderBy: {
+				id: 'asc',
+			},
 		});
+		console.log(search);
 		res.status(200).json(courses);
 	} catch (error) {
 		console.error(error);
@@ -120,16 +117,20 @@ export const updateCourse = async (req: Request, res: Response) => {
 		if (level && !levelCheck(Number(level))) {
 			return res.status(422).json({ message: 'invalid level input' });
 		}
+
+		if (!([1, 2, 3, 4, 5, 6].includes(Number(unit)))) {
+			return res.status(422).json({ message: 'invalid unit input' });
+		}
         
 		const updatedCourse = await prisma.course.update({
 			where: { id },
 			data: {
-				name: name !== undefined ? name : undefined,
-				description: description !== undefined ? description : undefined,
-				unit: unit !== undefined ? Number(unit) : undefined,
-				level: level !== undefined ? Number(level) : undefined,
-				dept: deptId !== undefined ? { connect: { id: deptId } } : undefined,
-				semester: semesterId !== undefined ? { connect: { id: Number(semesterId) } } : undefined,
+				name: name ? name : undefined,
+				description: description ? description : undefined,
+				unit: unit ? Number(unit) : undefined,
+				level: level ? Number(level) : undefined,
+				dept: deptId ? { connect: { id: deptId } } : undefined,
+				semester: semesterId ? { connect: { id: Number(semesterId) } } : undefined,
 			},
 		});
 		res.status(200).json(updatedCourse);

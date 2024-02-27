@@ -33,9 +33,23 @@ export const createDept = async (req: Request, res: Response) => {
 	}
 };
 
-export const getDepts = async (res: Response) => {
+export const getDepts = async (req: Request, res: Response) => {
 	try {
-		const depts = await prisma.dept.findMany();
+		const { search, page = 1 } = req.query;
+		const skip = (Number(page) - 1) * 10;
+
+		const depts = await prisma.dept.findMany({
+			where: {
+				OR: search ? [
+					{ name: { contains: (search as string), mode: 'insensitive' } },
+				] : undefined,
+			},
+			skip,
+			take: 10,
+			orderBy: {
+				id: 'asc'
+			},
+		});
 		res.status(200).json(depts);
 	} catch (error) {
 		console.error(error);

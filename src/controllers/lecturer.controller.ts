@@ -85,7 +85,33 @@ export const logout = async (req: Request, res: Response) => {
 
 export const getLecturers = async (req: Request, res: Response) => {
 	try {
-		const lecturers = await prisma.lecturer.findMany();
+		const { search, page = 1 } = req.query;
+
+		const skip = (Number(page) - 1) * 10;
+
+		const lecturers = await prisma.lecturer.findMany({
+			where: {
+				OR: search ? [
+					{
+						AND: [
+							{ firstName: { contains: (search as string).split(' ')[0], mode: 'insensitive' } },
+							{ lastName: { contains: (search as string).split(' ')[1], mode: 'insensitive' } },
+						],
+					},
+					{
+						AND: [
+							{ firstName: { contains: (search as string).split(' ')[1], mode: 'insensitive' } },
+							{ lastName: { contains: (search as string).split(' ')[0], mode: 'insensitive' } },
+						],
+					},
+				] : undefined,
+			},
+			skip: skip,
+			take: 10,
+			orderBy: {
+				firstName: 'asc',
+			},
+		});
 		res.status(200).json(lecturers);
 	} catch (error) {
 		console.error(error);
@@ -232,13 +258,21 @@ export const resetPassword = async (req: Request, res: Response) => {
 export const getCourses = async (req: Request, res: Response) => {
 	try {
 		const { id } = (req as customReq).token as JwtPayload;
-		const courses = await prisma.lecturer.findMany({
-			where: { id: Number(id) },
-			include: {
-				courses: true,
+		const { page = 1, search } = req.query;
+
+		const skip = (Number(page) - 1) * 10;
+
+		const courses = await prisma.course.findMany({
+			where: {
+				lecturers: { some: { id: Number(id) } },
+				AND: search ? [
+					{ name: { contains: (search as string), mode: 'insensitive' } },
+				] : undefined,
 			},
+			skip: skip,
+			take: 10,
 			orderBy: {
-				firstName: 'asc',
+				name: 'asc',
 			},
 		});
 		res.status(200).json(courses);
@@ -325,13 +359,6 @@ export const scoreStudent = async (req: Request, res: Response) => {
 				upperLimit: { gte: Number(scoreValue) },
 			},
 		});
-
-		// const findSemester = await prisma.course.findFirst({
-		//     where: { id: courseId },
-		//     select: {
-		//         semesterId: true
-		//     }
-		// });
 
 		if (Number(scoreValue) < 0 || Number(scoreValue) > 100) {
 			return res.status(422).json({ message: 'invalid score' });

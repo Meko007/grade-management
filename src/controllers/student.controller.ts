@@ -92,7 +92,38 @@ export const logout = async (req: Request, res: Response) => {
 
 export const getStudents = async (req: Request, res: Response) => {
 	try {
-		const students = await prisma.student.findMany();
+		const { level, deptId, search, page = 1 } = req.query;
+
+		const skip = (Number(page) - 1) * 10;
+
+		const students = await prisma.student.findMany({
+			where: {
+				level: level ? Number(level) : undefined,
+				deptId: deptId ? deptId as string : undefined,
+				OR: search ? [
+					{
+						AND: [
+							{ firstName: { contains: (search as string).split(' ')[0], mode: 'insensitive' } },
+							{ lastName: { contains: (search as string).split(' ')[1], mode: 'insensitive' } },
+						],
+					},
+					{
+						AND: [
+							{ firstName: { contains: (search as string).split(' ')[1], mode: 'insensitive' } },
+							{ lastName: { contains: (search as string).split(' ')[0], mode: 'insensitive' } },
+						],
+					},
+				] : undefined,
+			},
+			skip: skip,
+			take: 10,
+			orderBy: {
+				id: 'asc',
+			},
+		});
+
+		console.log(search);
+		console.log((search as string).split(' '));
 		res.status(200).json(students);
 	} catch (error) {
 		console.error(error);
@@ -293,20 +324,26 @@ export const getCourses = async (req: Request, res: Response) => {
 	try {
 		const { id } = (req as customReq).token as JwtPayload;
 		const { level, semesterId } = req.params;
-		const courses = await prisma.student.findMany({
-			where: { id },
-			include: {
-				courses: {
-					where: {
-						level: Number(level),
-						semesterId: Number(semesterId),
-					},
-				},
+		const { search, page = 1 } = req.query;
+
+		const skip = (Number(page) - 1) * 10;
+
+		const courses = await prisma.course.findMany({
+			where: {
+				students: { some: { id: id } },
+				level: Number(level),
+				semesterId: Number(semesterId),
+				AND: search ? [
+					{ name: { contains: (search as string), mode: 'insensitive' } },
+				] : undefined,
 			},
+			skip: skip,
+			take: 10,
 			orderBy: {
-				firstName: 'asc',
+				name: 'asc',
 			},
 		});
+
 		res.status(200).json(courses);
 	} catch (error) {
 		console.error(error);
@@ -318,27 +355,12 @@ export const viewGrades = async (req: Request, res: Response) => {
 	try {
 		const { id } = (req as customReq).token as JwtPayload;
 		const { sessionId, semesterId } = req.query;
-		// const student = await prisma.student.findUnique({
-		//     where: { id },
-		// });
-
-		// const scores = await prisma.student.findMany({
-		//     where: { id },
-		//     include: {
-		//         scores: {
-		//             where: {
-		//                 sessionId: sessionId,
-		//                 semesterId: parseInt(semesterId, 10),
-		//             },
-		//         },
-		//     },
-		// });
 
 		const scores = await prisma.score.findMany({
 			where: {
-				studentId: id,
-				sessionId: String(sessionId),
-				semesterId: parseInt(String(semesterId), 10),
+				student: { id: id },
+				session: { id: String(sessionId) },
+				semester: {id: parseInt(String(semesterId), 10)},
 			},
 			include: {
 				course: {
@@ -358,7 +380,7 @@ export const viewGrades = async (req: Request, res: Response) => {
 			return res.status(404).json({ message: 'You have no scores yet' });
 		}
 
-		res.status(200).json({ scores });
+		res.status(200).json(scores);
 	} catch (error) {
 		console.error(error);
 		res.status(500).json({ message: 'Internal Server Error' });
